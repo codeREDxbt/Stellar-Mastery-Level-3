@@ -85,6 +85,18 @@ export default function Home() {
         )}
       </div>
 
+      {/* Footer Credits */}
+      <footer className="py-8 border-t border-white/5 bg-black/20 shrink-0">
+        <div className="max-w-7xl mx-auto px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="mono-tech text-[9px] font-bold tracking-[0.2em] text-white/30 uppercase">
+            Built for Stellar Mastery Level 2
+          </div>
+          <div className="mono-tech text-[10px] font-black tracking-[0.1em] text-white/60">
+            MADE BY <span className="text-aurora">VINAYAK</span> (codeREDxbt)
+          </div>
+        </div>
+      </footer>
+
       {/* Decorative Elements */}
       <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/5 blur-[120px]" />
