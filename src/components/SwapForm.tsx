@@ -6,9 +6,7 @@ import { TxStatus } from "@/hooks/useSwap";
 interface Props {
   onPlaceOrder: (
     sellToken: string,
-    buyToken: string,
-    sellAmount: bigint,
-    buyPrice: bigint
+    sellAmount: bigint
   ) => Promise<void>;
   status: TxStatus;
   error: string | null;
@@ -83,7 +81,7 @@ export function SwapForm({ onPlaceOrder, status, error, lastTxHash }: Props) {
     e.preventDefault();
     if (!sellAmount) return;
     const amount = BigInt(Math.floor(parseFloat(sellAmount) * 1e7));
-    onPlaceOrder(sellToken, "", amount, 0n); // Repurposed for AMM
+    onPlaceOrder(sellToken, amount);
   };
 
   const isPending = status === "PENDING";
