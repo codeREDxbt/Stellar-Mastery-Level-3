@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { TxStatus } from "@/hooks/useSwap";
 
 interface Props {
@@ -14,11 +14,69 @@ interface Props {
   error: string | null;
 }
 
+const ASSETS: Record<string, { code: string; issuer?: string }> = {
+  USDC: { code: "USDC", issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5" },
+  XLM: { code: "XLM" },
+};
+
 export function SwapForm({ onPlaceOrder, status, error }: Props) {
   const [sellAmount, setSellAmount] = useState("");
   const [buyPrice, setBuyPrice] = useState("");
   const [sellToken, setSellToken] = useState("USDC");
   const [buyToken, setBuyToken] = useState("XLM");
+  const [isFetchingPrice, setIsFetchingPrice] = useState(false);
+
+  const fetchMarketPrice = useCallback(async () => {
+    if (!sellAmount || parseFloat(sellAmount) <= 0) return;
+
+    setIsFetchingPrice(true);
+    try {
+      const horizonUrl = process.env.NEXT_PUBLIC_HORIZON_URL || "https://horizon-testnet.stellar.org";
+      const sourceAsset = ASSETS[sellToken];
+      const destAsset = ASSETS[buyToken];
+
+      const params = new URLSearchParams({
+        source_asset_type: sourceAsset.code === "XLM" ? "native" : "credit_alphanum4",
+        source_asset_code: sourceAsset.code === "XLM" ? "" : sourceAsset.code,
+        source_asset_issuer: sourceAsset.issuer || "",
+        source_amount: sellAmount,
+        destination_assets: destAsset.code === "XLM" ? "native" : `${destAsset.code}:${destAsset.issuer}`,
+      });
+
+      const response = await fetch(`${horizonUrl}/paths/strict-send?${params.toString()}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data._embedded?.records?.[0]) {
+          const destinationAmount = data._embedded.records[0].destination_amount;
+          // Set the target price (total amount user gets)
+          setBuyPrice(destinationAmount);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to fetch market price:", e);
+    } finally {
+      setIsFetchingPrice(false);
+    }
+  }, [sellAmount, sellToken, buyToken]);
+
+  // Handle Opposite Tokens
+  const handleSellTokenChange = (token: string) => {
+    setSellToken(token);
+    setBuyToken(token === "USDC" ? "XLM" : "USDC");
+  };
+
+  const handleBuyTokenChange = (token: string) => {
+    setBuyToken(token);
+    setSellToken(token === "USDC" ? "XLM" : "USDC");
+  };
+
+  // Auto-fetch price when inputs change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchMarketPrice();
+    }, 600); // Debounce
+    return () => clearTimeout(timer);
+  }, [sellAmount, sellToken, buyToken, fetchMarketPrice]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +90,6 @@ export function SwapForm({ onPlaceOrder, status, error }: Props) {
 
   return (
     <div className="glass-panel rounded-lg flex flex-col shadow-2xl h-[600px]">
-      {/* Header aligned with Activity Log */}
       <div className="px-6 py-5 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-neon" />
@@ -61,16 +118,15 @@ export function SwapForm({ onPlaceOrder, status, error }: Props) {
               />
               <select 
                 value={sellToken}
-                onChange={(e) => setSellToken(e.target.value)}
+                onChange={(e) => handleSellTokenChange(e.target.value)}
                 className="bg-surface text-white rounded px-3 py-1.5 font-bold text-[10px] outline-none border border-white/10 mono-tech cursor-pointer"
               >
-                <option>USDC</option>
-                <option>XLM</option>
+                <option value="USDC">USDC</option>
+                <option value="XLM">XLM</option>
               </select>
             </div>
           </div>
 
-          {/* Pivot */}
           <div className="flex justify-center -my-4 relative z-10">
             <div className="w-8 h-8 rounded-full bg-surface border border-white/10 flex items-center justify-center text-primary shadow-neon">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M7 10l5 5 5-5"/></svg>
@@ -81,7 +137,9 @@ export function SwapForm({ onPlaceOrder, status, error }: Props) {
           <div className="space-y-3">
             <div className="flex justify-between items-end px-1">
               <label className="mono-tech text-[9px] font-bold text-text-muted uppercase tracking-[0.2em]">Target Rate</label>
-              <span className="mono-tech text-[9px] text-primary font-black">MARKET_SYNC</span>
+              <span className={`mono-tech text-[9px] ${isFetchingPrice ? "text-primary animate-pulse" : "text-primary font-black"}`}>
+                {isFetchingPrice ? "SYNCING_POOL..." : "MARKET_SYNC"}
+              </span>
             </div>
             <div className="flex items-center gap-4 bg-white/[0.03] p-6 rounded border border-white/5 focus-within:border-secondary/30 transition-all">
               <input
@@ -95,18 +153,17 @@ export function SwapForm({ onPlaceOrder, status, error }: Props) {
               />
               <select 
                 value={buyToken}
-                onChange={(e) => setBuyToken(e.target.value)}
+                onChange={(e) => handleBuyTokenChange(e.target.value)}
                 className="bg-surface text-white rounded px-3 py-1.5 font-bold text-[10px] outline-none border border-white/10 mono-tech cursor-pointer"
               >
-                <option>XLM</option>
-                <option>USDC</option>
+                <option value="XLM">XLM</option>
+                <option value="USDC">USDC</option>
               </select>
             </div>
           </div>
         </div>
 
         <div className="space-y-6 mt-auto">
-          {/* Notifications area */}
           <div className="min-h-[30px]">
             {error && (
               <div className="text-[10px] mono-tech font-bold text-danger uppercase tracking-tight animate-in fade-in">
@@ -132,7 +189,6 @@ export function SwapForm({ onPlaceOrder, status, error }: Props) {
             {isPending ? "Validating_XDR..." : "Execute_Swap"}
           </button>
 
-          {/* Technical Data */}
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white/[0.02] p-4 rounded border border-white/5">
               <span className="text-[7px] text-text-muted uppercase font-black tracking-widest block mb-1">Network Fee</span>
@@ -148,3 +204,4 @@ export function SwapForm({ onPlaceOrder, status, error }: Props) {
     </div>
   );
 }
+

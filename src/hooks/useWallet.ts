@@ -75,11 +75,14 @@ export function useWallet() {
       }
 
       try {
-        const { signedTxXdr } = await StellarWalletsKit.signTransaction(xdr, {
+        const response = await StellarWalletsKit.signTransaction(xdr, {
           networkPassphrase: Networks.TESTNET,
           address: address,
         });
-        return signedTxXdr;
+        console.log("Hooks: Wallet sign response:", response);
+        // Handle both object and string responses
+        const signedXdr = (response as any).signedTxXdr || response;
+        return signedXdr;
       } catch (e) {
         console.error("Hooks: Sign failed:", e);
         throw e;

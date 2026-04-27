@@ -48,7 +48,7 @@ export function EventFeed({ payments, contractEvents, isLive, publicKey }: Props
                     <div className="opacity-60 text-[10px]">
                       ASSET: {event.detail.sellToken} <br />
                       AMOUNT: {(Number(event.detail.sellAmount) / 1e7).toLocaleString()} <br />
-                      PRICE: {Number(event.detail.buyPrice) / 1e7} XLM
+                      PRICE: {(Number(event.detail.buyPrice) / 1e7).toLocaleString()} {event.detail.buyToken}
                     </div>
                   </div>
                 ) : (
@@ -60,7 +60,7 @@ export function EventFeed({ payments, contractEvents, isLive, publicKey }: Props
         ))}
 
         {/* Payments */}
-        {payments.map((payment) => {
+        {payments.filter(p => Number(p.amount) > 0).map((payment) => {
           const isInbound = payment.to === publicKey;
           return (
             <div key={payment.id} className="group relative">
@@ -76,11 +76,11 @@ export function EventFeed({ payments, contractEvents, isLive, publicKey }: Props
                   <div className="flex justify-between items-center">
                     <span>TRANSFER</span>
                     <span className={isInbound ? 'text-secondary' : 'text-danger'}>
-                      {isInbound ? '+' : '-'}{payment.amount} {payment.asset_code || "XLM"}
+                      {isInbound ? '+' : '-'}{payment.amount || '0'} {payment.asset_code || "XLM"}
                     </span>
                   </div>
                   <div className="mt-1 opacity-50 text-[9px] truncate">
-                    {isInbound ? `FROM: ${payment.from}` : `TO: ${payment.to}`}
+                    {isInbound ? `FROM: ${payment.from || payment.funder || 'SYSTEM'}` : `TO: ${payment.to || payment.account || payment.destination || 'CONTRACT'}`}
                   </div>
                 </div>
               </div>

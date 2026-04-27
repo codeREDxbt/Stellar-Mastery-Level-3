@@ -3,9 +3,11 @@
 import { useWallet } from "@/hooks/useWallet";
 import { useSwap } from "@/hooks/useSwap";
 import { useEvents } from "@/hooks/useEvents";
+import Link from "next/link";
 import { WalletConnector } from "@/components/WalletConnector";
 import { SwapForm } from "@/components/SwapForm";
 import { EventFeed } from "@/components/EventFeed";
+import OrderList from "@/components/OrderList";
 
 export default function Home() {
   const { address, error: walletError, connect, disconnect, sign } = useWallet();
@@ -21,9 +23,9 @@ export default function Home() {
             <div className="w-8 h-8 rounded bg-white flex items-center justify-center font-black text-black text-[10px]">
               S
             </div>
-            <span className="mono-tech text-[10px] font-bold tracking-[0.3em] uppercase opacity-40">
+            <Link href="/docs" className="mono-tech text-[10px] font-bold tracking-[0.3em] uppercase opacity-40 hover:opacity-80 transition-opacity">
               Stellar.Swap <span className="text-white opacity-100">v2.1</span>
-            </span>
+            </Link>
           </div>
           <WalletConnector address={address} onConnect={connect} onDisconnect={disconnect} />
         </div>
@@ -55,9 +57,9 @@ export default function Home() {
                 >
                   Connect Wallet
                 </button>
-                <button className="px-12 py-4 rounded bg-white/5 border border-white/10 text-white font-bold text-[10px] uppercase tracking-[0.4em] hover:bg-white/10 transition-all">
+                <Link href="/docs" className="px-12 py-4 rounded bg-white/5 border border-white/10 text-white font-bold text-[10px] uppercase tracking-[0.4em] hover:bg-white/10 transition-all flex items-center justify-center">
                   Documentation
-                </button>
+                </Link>
               </div>
 
               {walletError && (
@@ -68,10 +70,11 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch animate-in fade-in slide-in-from-bottom-8 duration-700">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start animate-in fade-in slide-in-from-bottom-8 duration-700">
             {/* Swap Terminal Column */}
-            <div className="h-full">
+            <div className="space-y-8">
               <SwapForm onPlaceOrder={placeOrder} status={status} error={error} />
+              <OrderList address={address} sign={sign} />
             </div>
 
             {/* Activity Log Column */}
