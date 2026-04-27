@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Stellar.Swap - Level 2 Mastery Project
 
-## Getting Started
+Stellar.Swap is a high-performance, cyber-industrial decentralized exchange interface built for the Stellar network. This project demonstrates advanced Soroban integration, complex error handling, and a premium UI/UX design.
 
-First, run the development server:
+## 🚀 Live Demo
+**URL**: [https://stellar-swap-level-2.vercel.app/](https://stellar-swap-level-2.vercel.app/)
 
+## 📸 Interface Preview
+### Wallet Integration
+![Wallet Options Available](./public/wallet-options.png)
+*Support for Freighter, Albedo, and more via Stellar Wallets Kit.*
+
+## ⛓️ On-Chain Details
+- **Deployed Contract ID**: `CDFHB7JOI6BILWZLZFKY55MM5XRMGQFL2GQL7EEY76SU6LQ22AORGG2P`
+- **Verification**: [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CDFHB7JOI6BILWZLZFKY55MM5XRMGQFL2GQL7EEY76SU6LQ22AORGG2P)
+- **Latest Interaction (Tx Hash)**: `6acd8c6047c532f4c918db18dc8778b1bf3a4ecbfcbff3eb08a7a602dbc0392f`
+- **Tx Verification**: [View Transaction](https://stellar.expert/explorer/testnet/tx/6acd8c6047c532f4c918db18dc8778b1bf3a4ecbfcbff3eb08a7a602dbc0392f)
+
+## 🛠️ Setup Instructions
+
+### 1. Prerequisites
+- Node.js (v18+)
+- npm / yarn / pnpm
+- Stellar Wallet (Freighter or Albedo)
+
+### 2. Installation
+Clone the repository and install dependencies:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/codeREDxbt/Stellar-Mastery-Level-2.git
+cd stellar-swap-app
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3. Environment Configuration
+Create a `.env.local` file in the root directory:
+```env
+NEXT_PUBLIC_CONTRACT_ID=CDFHB7JOI6BILWZLZFKY55MM5XRMGQFL2GQL7EEY76SU6LQ22AORGG2P
+NEXT_PUBLIC_NETWORK=TESTNET
+NEXT_PUBLIC_RPC_URL=https://soroban-testnet.stellar.org
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 4. Running Locally
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📑 Certification Requirements Met
+- ✅ **3+ Error Types**: Handled Simulation Failure, RPC Submission Errors, and User Rejection.
+- ✅ **Testnet Deployment**: Live Soroban contract integrated and verified.
+- ✅ **Transaction Status**: Real-time terminal with Success/Failure feedback.
+- ✅ **Multi-wallet Support**: Integrated StellarWalletsKit.
+- ✅ **Premium UI**: Custom "Aurora Midnight" design system.
 
-## Learn More
+---
+**Developer**: codeRED
+**Assisted by**: Antigravity AI
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
