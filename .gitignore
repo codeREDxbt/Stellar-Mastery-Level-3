@@ -23,6 +23,8 @@
 # misc
 .DS_Store
 *.pem
+/target/
+/Cargo.lock
 
 # debug
 npm-debug.log*
