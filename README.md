@@ -16,7 +16,7 @@ Stellar.Swap is a high-performance, cyber-industrial decentralized exchange inte
 *Real-time swap execution with directional activity log and execution terminal.*
 
 ### Wallet Integration
-![Wallet Options Available](./public/wallet-options.png)
+![Wallet Integration](./public/wallet-integration.png)
 *Support for Freighter, Albedo, and more via Stellar Wallets Kit.*
 
 
