@@ -8,6 +8,7 @@ import { WalletConnector } from "@/components/WalletConnector";
 import { SwapForm } from "@/components/SwapForm";
 import { EventFeed } from "@/components/EventFeed";
 import OrderList from "@/components/OrderList";
+import { BalanceDisplay } from "@/components/BalanceDisplay";
 
 export default function Home() {
   const { address, error: walletError, connect, disconnect, sign } = useWallet();
@@ -73,6 +74,7 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start animate-in fade-in slide-in-from-bottom-8 duration-700">
             {/* Swap Terminal Column */}
             <div className="space-y-8">
+              <BalanceDisplay address={address} />
               <SwapForm onPlaceOrder={placeOrder} status={status} error={error} />
               <OrderList address={address} sign={sign} />
             </div>
