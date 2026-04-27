@@ -81,10 +81,9 @@ export function SwapForm({ onPlaceOrder, status, error, lastTxHash }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!sellAmount || !buyPrice) return;
+    if (!sellAmount) return;
     const amount = BigInt(Math.floor(parseFloat(sellAmount) * 1e7));
-    const price = BigInt(Math.floor(parseFloat(buyPrice) * 1e7));
-    onPlaceOrder(sellToken, buyToken, amount, price);
+    onPlaceOrder(sellToken, "", amount, 0n); // Repurposed for AMM
   };
 
   const isPending = status === "PENDING";
@@ -199,7 +198,7 @@ export function SwapForm({ onPlaceOrder, status, error, lastTxHash }: Props) {
                 : "bg-white text-black hover:bg-primary hover:shadow-neon active:scale-[0.98]"
             }`}
           >
-            {isPending ? "Validating_XDR..." : "Execute_Swap"}
+            {isPending ? "Balancing_Pool..." : "Instant_Swap"}
           </button>
 
           <div className="grid grid-cols-2 gap-4">

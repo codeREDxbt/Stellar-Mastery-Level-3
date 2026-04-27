@@ -7,12 +7,12 @@ import Link from "next/link";
 import { WalletConnector } from "@/components/WalletConnector";
 import { SwapForm } from "@/components/SwapForm";
 import { EventFeed } from "@/components/EventFeed";
-import OrderList from "@/components/OrderList";
+import { LiquidityPool } from "@/components/LiquidityPool";
 import { BalanceDisplay } from "@/components/BalanceDisplay";
 
 export default function Home() {
   const { address, error: walletError, connect, disconnect, sign } = useWallet();
-  const { status, error, lastTxHash, placeOrder } = useSwap(address, sign);
+  const { status, error, lastTxHash, reserves, deposit, instantSwap, fetchReserves } = useSwap(address, sign);
   const { payments, contractEvents, isLive } = useEvents(address);
 
   return (
@@ -75,8 +75,8 @@ export default function Home() {
             {/* Swap Terminal Column */}
             <div className="space-y-8">
               <BalanceDisplay address={address} />
-              <SwapForm onPlaceOrder={placeOrder} status={status} error={error} lastTxHash={lastTxHash} />
-              <OrderList address={address} sign={sign} />
+              <SwapForm onPlaceOrder={instantSwap} status={status} error={error} lastTxHash={lastTxHash} />
+              <LiquidityPool reserves={reserves} onDeposit={deposit} status={status} fetchReserves={fetchReserves} />
             </div>
 
             {/* Activity Log Column */}

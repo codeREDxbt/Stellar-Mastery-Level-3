@@ -42,14 +42,14 @@ export function useEvents(publicKey: string | null) {
       setContractEvents((prev) => [event, ...prev].slice(0, 50));
     };
 
-    window.addEventListener('stellar:order_placed', handleLocalOrder);
-    window.addEventListener('stellar:order_filled', handleLocalOrder);
-
+    window.addEventListener('stellar:order_placed' as any, handleLocalOrder);
+    window.addEventListener('stellar:orders_updated' as any, handleLocalOrder);
+    
     return () => {
       // @ts-ignore
       if (typeof stream === 'function') stream();
-      window.removeEventListener('stellar:order_placed', handleLocalOrder);
-      window.removeEventListener('stellar:order_filled', handleLocalOrder);
+      window.removeEventListener('stellar:order_placed' as any, handleLocalOrder);
+      window.removeEventListener('stellar:orders_updated' as any, handleLocalOrder);
     };
   }, [publicKey]);
 

@@ -1,134 +1,150 @@
 #![no_std]
 use soroban_sdk::{
-    contract, contractimpl, contracterror, contracttype,
-    token, Address, Env, Symbol, log,
+    contract, contractimpl, contracterror, token, Address, Env, Symbol,
 };
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]
-pub enum SwapError {
-    InsufficientBalance = 1,
-    InvalidPrice        = 2,
-    OrderNotFound       = 3,
-}
-
-#[contracttype]
-pub struct Order {
-    pub seller:      Address,
-    pub sell_token:  Address,
-    pub buy_token:   Address,
-    pub sell_amount: i128,
-    pub buy_price:   i128,
+pub enum AmmError {
+    InsufficientReserves = 1,
+    InvalidAmount        = 2,
+    Unauthorized         = 3,
 }
 
 #[contract]
-pub struct SwapContract;
+pub struct AmmContract;
 
 #[contractimpl]
-impl SwapContract {
-    pub fn place_order(
+impl AmmContract {
+    /// Initialize the pool or add more liquidity.
+    /// In this simplified version, we'll use a direct deposit model.
+    pub fn deposit(
         env: Env,
-        seller: Address,
-        sell_token: Address,
-        buy_token: Address,
-        sell_amount: i128,
-        buy_price: i128,
-    ) -> Result<u64, SwapError> {
-        if buy_price <= 0 { return Err(SwapError::InvalidPrice); }
-        seller.require_auth();
+        provider: Address,
+        token_a: Address,
+        token_b: Address,
+        amount_a: i128,
+        amount_b: i128,
+    ) -> Result<(), AmmError> {
+        provider.require_auth();
+        if amount_a <= 0 || amount_b <= 0 { return Err(AmmError::InvalidAmount); }
+
+        let client_a = token::Client::new(&env, &token_a);
+        let client_b = token::Client::new(&env, &token_b);
+
+        // Transfer funds to contract
+        client_a.transfer(&provider, &env.current_contract_address(), &amount_a);
+        client_b.transfer(&provider, &env.current_contract_address(), &amount_b);
+
+        // Update reserves in instance storage
+        let mut res_a: i128 = env.storage().instance().get(&Symbol::new(&env, "res_a")).unwrap_or(0);
+        let mut res_b: i128 = env.storage().instance().get(&Symbol::new(&env, "res_b")).unwrap_or(0);
+
+        res_a += amount_a;
+        res_b += amount_b;
+
+        env.storage().instance().set(&Symbol::new(&env, "res_a"), &res_a);
+        env.storage().instance().set(&Symbol::new(&env, "res_b"), &res_b);
         
-        // 1. Transfer funds to Escrow (this contract)
-        let client = token::Client::new(&env, &sell_token);
-        client.transfer(&seller, &env.current_contract_address(), &sell_amount);
+        // Permanent record of tokens in the pool
+        env.storage().instance().set(&Symbol::new(&env, "token_a"), &token_a);
+        env.storage().instance().set(&Symbol::new(&env, "token_b"), &token_b);
 
-        // 2. Get unique order ID from instance storage
-        let order_id: u64 = env.storage().instance().get(&Symbol::new(&env, "order_id")).unwrap_or(0);
-        let next_id = order_id + 1;
-        env.storage().instance().set(&Symbol::new(&env, "order_id"), &next_id);
-
-        // 3. Store order
-        let order = Order { 
-            seller: seller.clone(), 
-            sell_token, 
-            buy_token, 
-            sell_amount, 
-            buy_price 
-        };
-        env.storage().persistent().set(&next_id, &order);
-        
-        // 4. Emit event
-        env.events().publish(
-            (Symbol::new(&env, "place_order"),),
-            (next_id,),
-        );
-
-        Ok(next_id)
+        env.events().publish((Symbol::new(&env, "deposit"),), (amount_a, amount_b));
+        Ok(())
     }
 
-    pub fn get_order(env: Env, id: u64) -> Option<Order> {
-        env.storage().persistent().get(&id)
-    }
-
-    pub fn get_order_count(env: Env) -> u64 {
-        env.storage().instance().get(&Symbol::new(&env, "order_id")).unwrap_or(0)
-    }
-
-    pub fn fill_order(
+    /// Instant Swap: Trade Token A for Token B or vice-versa.
+    /// Logic: (x + dx) * (y - dy) = x * y
+    pub fn swap(
         env: Env,
         buyer: Address,
-        id: u64,
-    ) -> Result<(), SwapError> {
+        token_in: Address,
+        amount_in: i128,
+    ) -> Result<i128, AmmError> {
         buyer.require_auth();
+        if amount_in <= 0 { return Err(AmmError::InvalidAmount); }
 
-        // 1. Get order
-        let order: Order = env.storage().persistent().get(&id).ok_or(SwapError::OrderNotFound)?;
+        let token_a: Address = env.storage().instance().get(&Symbol::new(&env, "token_a")).unwrap();
+        let token_b: Address = env.storage().instance().get(&Symbol::new(&env, "token_b")).unwrap();
+        let mut res_a: i128 = env.storage().instance().get(&Symbol::new(&env, "res_a")).unwrap_or(0);
+        let mut res_b: i128 = env.storage().instance().get(&Symbol::new(&env, "res_b")).unwrap_or(0);
 
-        // 2. Transfer buy_token (e.g. XLM) from buyer to seller
-        let buy_client = token::Client::new(&env, &order.buy_token);
-        buy_client.transfer(&buyer, &order.seller, &order.buy_price);
+        if res_a == 0 || res_b == 0 { return Err(AmmError::InsufficientReserves); }
 
-        // 3. Transfer sell_token (e.g. USDC) from contract to buyer
-        let sell_client = token::Client::new(&env, &order.sell_token);
-        sell_client.transfer(&env.current_contract_address(), &buyer, &order.sell_amount);
+        let (amount_out, is_a_to_b) = if token_in == token_a {
+            // dy = (y * dx) / (x + dx)
+            let out = (res_b * amount_in) / (res_a + amount_in);
+            (out, true)
+        } else if token_in == token_b {
+            let out = (res_a * amount_in) / (res_b + amount_in);
+            (out, false)
+        } else {
+            return Err(AmmError::InvalidAmount);
+        };
 
-        // 4. Remove order from storage
-        env.storage().persistent().remove(&id);
+        if amount_out <= 0 { return Err(AmmError::InsufficientReserves); }
 
-        // 5. Emit event
-        env.events().publish(
-            (Symbol::new(&env, "fill_order"),),
-            (id,),
-        );
+        // Execute transfers
+        let client_in = token::Client::new(&env, &token_in);
+        let token_out = if is_a_to_b { token_b } else { token_a };
+        let client_out = token::Client::new(&env, &token_out);
 
+        client_in.transfer(&buyer, &env.current_contract_address(), &amount_in);
+        client_out.transfer(&env.current_contract_address(), &buyer, &amount_out);
+
+        // Update reserves
+        if is_a_to_b {
+            res_a += amount_in;
+            res_b -= amount_out;
+        } else {
+            res_b += amount_in;
+            res_a -= amount_out;
+        }
+
+        env.storage().instance().set(&Symbol::new(&env, "res_a"), &res_a);
+        env.storage().instance().set(&Symbol::new(&env, "res_b"), &res_b);
+
+        env.events().publish((Symbol::new(&env, "swap"),), (amount_in, amount_out));
+        Ok(amount_out)
+    }
+
+    /// Withdraw liquidity from the pool.
+    pub fn withdraw(
+        env: Env,
+        provider: Address,
+        amount_a: i128,
+        amount_b: i128,
+    ) -> Result<(), AmmError> {
+        provider.require_auth();
+        
+        let token_a: Address = env.storage().instance().get(&Symbol::new(&env, "token_a")).unwrap();
+        let token_b: Address = env.storage().instance().get(&Symbol::new(&env, "token_b")).unwrap();
+        let mut res_a: i128 = env.storage().instance().get(&Symbol::new(&env, "res_a")).unwrap_or(0);
+        let mut res_b: i128 = env.storage().instance().get(&Symbol::new(&env, "res_b")).unwrap_or(0);
+
+        if amount_a > res_a || amount_b > res_b { return Err(AmmError::InsufficientReserves); }
+
+        let client_a = token::Client::new(&env, &token_a);
+        let client_b = token::Client::new(&env, &token_b);
+
+        client_a.transfer(&env.current_contract_address(), &provider, &amount_a);
+        client_b.transfer(&env.current_contract_address(), &provider, &amount_b);
+
+        res_a -= amount_a;
+        res_b -= amount_b;
+
+        env.storage().instance().set(&Symbol::new(&env, "res_a"), &res_a);
+        env.storage().instance().set(&Symbol::new(&env, "res_b"), &res_b);
+
+        env.events().publish((Symbol::new(&env, "withdraw"),), (amount_a, amount_b));
         Ok(())
     }
 
-    pub fn cancel_order(
-        env: Env,
-        id: u64,
-    ) -> Result<(), SwapError> {
-        // 1. Get order
-        let order: Order = env.storage().persistent().get(&id).ok_or(SwapError::OrderNotFound)?;
-        
-        // 2. Ensure only seller can cancel
-        order.seller.require_auth();
-
-        // 3. Refund sell_token from contract to seller
-        let sell_client = token::Client::new(&env, &order.sell_token);
-        sell_client.transfer(&env.current_contract_address(), &order.seller, &order.sell_amount);
-
-        // 4. Remove order from storage
-        env.storage().persistent().remove(&id);
-
-        // 5. Emit event
-        env.events().publish(
-            (Symbol::new(&env, "cancel_order"),),
-            (id,),
-        );
-
-        Ok(())
+    pub fn get_reserves(env: Env) -> (i128, i128) {
+        let res_a: i128 = env.storage().instance().get(&Symbol::new(&env, "res_a")).unwrap_or(0);
+        let res_b: i128 = env.storage().instance().get(&Symbol::new(&env, "res_b")).unwrap_or(0);
+        (res_a, res_b)
     }
 }
-
-mod test;
