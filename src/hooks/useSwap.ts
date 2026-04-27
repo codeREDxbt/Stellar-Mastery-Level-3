@@ -54,12 +54,10 @@ export function useSwap(address: string | null, sign: (xdr: string) => Promise<s
       .setTimeout(0)
       .build();
 
-      const sim = await server.simulateTransaction(tx);
-      const result = sim.results ? sim.results[0] : (sim as any).result;
+      const sim = await server.simulateTransaction(tx) as any;
+      const result = sim.results ? sim.results[0] : sim.result;
       
-      if (!result) {
-        return [];
-      }
+      if (!result) return [];
       
       const count = Number(scValToNative(result.retval || result.xdr.value()));
       const orders: OrderData[] = [];
@@ -73,8 +71,8 @@ export function useSwap(address: string | null, sign: (xdr: string) => Promise<s
         .setTimeout(0)
         .build();
 
-        const orderSim = await server.simulateTransaction(orderTx);
-        const orderResult = orderSim.results ? orderSim.results[0] : (orderSim as any).result;
+        const orderSim = await server.simulateTransaction(orderTx) as any;
+        const orderResult = orderSim.results ? orderSim.results[0] : orderSim.result;
         
         if (orderResult) {
           const rawOrder = scValToNative(orderResult.retval || orderResult.xdr.value());
