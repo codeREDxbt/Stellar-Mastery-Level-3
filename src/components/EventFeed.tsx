@@ -44,22 +44,24 @@ export function EventFeed({ payments, contractEvents, isLive, publicKey }: Props
               <div className="mono-tech text-xs text-white/90 leading-relaxed bg-white/[0.03] p-4 rounded border border-white/5 group-hover:border-primary/20 transition-all">
                 {event.type === 'ORDERS UPDATED' ? (
                   <div className="space-y-1">
-                    {event.detail?.sellToken !== "UNKNOWN" ? (
+                    {event.detail && event.detail.sellToken && event.detail.sellToken !== "UNKNOWN" ? (
                       <>
                         <div>COMMAND: <span className="text-primary">INSTANT_SWAP</span></div>
                         <div className="opacity-60 text-[10px]">
                           TOKEN: {event.detail.sellToken} <br />
-                          AMOUNT: {(Number(event.detail.amount) / 1e7).toLocaleString()}
+                          AMOUNT: {event.detail.amount ? (Number(event.detail.amount) / 1e7).toLocaleString() : '0'}
                         </div>
                       </>
-                    ) : (
+                    ) : event.detail && event.detail.amountA ? (
                       <>
                         <div>COMMAND: <span className="text-aurora">POOL_DEPOSIT</span></div>
                         <div className="opacity-60 text-[10px]">
-                          AMOUNT_A: {(Number(event.detail.amountA) / 1e7).toLocaleString()} <br />
-                          AMOUNT_B: {(Number(event.detail.amountB) / 1e7).toLocaleString()}
+                          AMOUNT_A: {event.detail.amountA ? (Number(event.detail.amountA) / 1e7).toLocaleString() : '0'} <br />
+                          AMOUNT_B: {event.detail.amountB ? (Number(event.detail.amountB) / 1e7).toLocaleString() : '0'}
                         </div>
                       </>
+                    ) : (
+                      <div>COMMAND: <span className="text-primary">VAULT_SYNC</span></div>
                     )}
                   </div>
                 ) : (
