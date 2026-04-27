@@ -174,7 +174,7 @@ export function useSwap(address: string | null, sign: (xdr: string) => Promise<s
       // 5. Submit
       console.log("Broadcasting to Soroban RPC...");
       const finalTx = TransactionBuilder.fromXDR(signedXdr, Networks.TESTNET);
-      const sendResponse = await server.sendTransaction(finalTx as any);
+      const sendResponse = await server.sendTransaction(finalTx as any) as any;
       
       if (sendResponse.status === "ERROR") {
         throw new Error(`RPC Error: ${sendResponse.errorResultXdr || "Check console"}`);
@@ -235,12 +235,12 @@ export function useSwap(address: string | null, sign: (xdr: string) => Promise<s
         .build();
       const preparedTx = await server.prepareTransaction(tx);
       const signedXdr = await sign(preparedTx.toXDR());
-      const sendResponse = await server.sendTransaction(TransactionBuilder.fromXDR(signedXdr, Networks.TESTNET) as any);
+      const sendResponse = await server.sendTransaction(TransactionBuilder.fromXDR(signedXdr, Networks.TESTNET) as any) as any;
       
       // Basic polling
       let status = "PENDING";
       while (status !== "SUCCESS" && status !== "FAILED") {
-        const res = await server.getTransaction(sendResponse.hash);
+        const res = await server.getTransaction(sendResponse.hash) as any;
         status = res.status;
         await new Promise(r => setTimeout(r, 2000));
       }
