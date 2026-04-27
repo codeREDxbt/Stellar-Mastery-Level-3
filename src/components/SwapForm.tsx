@@ -12,6 +12,7 @@ interface Props {
   ) => Promise<void>;
   status: TxStatus;
   error: string | null;
+  lastTxHash: string | null;
 }
 
 const ASSETS: Record<string, { code: string; issuer?: string }> = {
@@ -19,7 +20,7 @@ const ASSETS: Record<string, { code: string; issuer?: string }> = {
   XLM: { code: "XLM" },
 };
 
-export function SwapForm({ onPlaceOrder, status, error }: Props) {
+export function SwapForm({ onPlaceOrder, status, error, lastTxHash }: Props) {
   const [sellAmount, setSellAmount] = useState("");
   const [buyPrice, setBuyPrice] = useState("");
   const [sellToken, setSellToken] = useState("USDC");
@@ -171,8 +172,20 @@ export function SwapForm({ onPlaceOrder, status, error }: Props) {
               </div>
             )}
             {status === "SUCCESS" && !error && (
-              <div className="text-[10px] mono-tech font-bold text-primary uppercase tracking-tight animate-in fade-in">
-                &gt; BROADCAST_SUCCESS: LEDGER_CONFIRMED
+              <div className="space-y-2 animate-in fade-in">
+                <div className="text-[10px] mono-tech font-bold text-primary uppercase tracking-tight">
+                  &gt; BROADCAST_SUCCESS: LEDGER_CONFIRMED
+                </div>
+                {lastTxHash && (
+                  <a 
+                    href={`https://stellar.expert/explorer/testnet/tx/${lastTxHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block text-[9px] mono-tech text-primary/60 hover:text-primary underline decoration-primary/20 transition-colors uppercase tracking-widest"
+                  >
+                    VIEW_ON_EXPLORER [HASH: {lastTxHash.slice(0, 8)}...]
+                  </a>
+                )}
               </div>
             )}
           </div>

@@ -38,6 +38,7 @@ export interface OrderData {
 export function useSwap(address: string | null, sign: (xdr: string) => Promise<string>) {
   const [status, setStatus] = useState<TxStatus>("IDLE");
   const [error, setError] = useState<string | null>(null);
+  const [lastTxHash, setLastTxHash] = useState<string | null>(null);
 
   const fetchOrders = useCallback(async (): Promise<OrderData[]> => {
     if (!CONTRACT_ID || !address) return [];
@@ -201,6 +202,7 @@ export function useSwap(address: string | null, sign: (xdr: string) => Promise<s
 
       if (txResultStatus === "FAILED") throw new Error("TX Failed.");
       console.log("Order Placed successfully! Hash:", sendResponse.hash);
+      setLastTxHash(sendResponse.hash);
       setStatus("SUCCESS");
       
       // Dispatch detailed event for log
@@ -244,6 +246,7 @@ export function useSwap(address: string | null, sign: (xdr: string) => Promise<s
         status = res.status;
         await new Promise(r => setTimeout(r, 2000));
       }
+      setLastTxHash(sendResponse.hash);
       setStatus("SUCCESS");
       window.dispatchEvent(new CustomEvent('stellar:orders_updated'));
     } catch (e) { handleError(e); }
@@ -272,7 +275,8 @@ export function useSwap(address: string | null, sign: (xdr: string) => Promise<s
         .build();
       const preparedTx = await server.prepareTransaction(tx);
       const signedXdr = await sign(preparedTx.toXDR());
-      await server.sendTransaction(TransactionBuilder.fromXDR(signedXdr, Networks.TESTNET) as any);
+      const sendResponse = await server.sendTransaction(TransactionBuilder.fromXDR(signedXdr, Networks.TESTNET) as any) as any;
+      setLastTxHash(sendResponse.hash);
       setStatus("SUCCESS");
       window.dispatchEvent(new CustomEvent('stellar:orders_updated'));
     } catch (e) { handleError(e); }
@@ -284,6 +288,6 @@ export function useSwap(address: string | null, sign: (xdr: string) => Promise<s
     setStatus("FAILED");
   }
 
-  return { status, error, placeOrder, cancelOrder, fillOrder, fetchOrders };
+  return { status, error, lastTxHash, placeOrder, cancelOrder, fillOrder, fetchOrders };
 }
 

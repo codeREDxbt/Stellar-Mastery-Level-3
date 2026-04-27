@@ -12,7 +12,7 @@ import { BalanceDisplay } from "@/components/BalanceDisplay";
 
 export default function Home() {
   const { address, error: walletError, connect, disconnect, sign } = useWallet();
-  const { status, error, placeOrder } = useSwap(address, sign);
+  const { status, error, lastTxHash, placeOrder } = useSwap(address, sign);
   const { payments, contractEvents, isLive } = useEvents(address);
 
   return (
@@ -75,7 +75,7 @@ export default function Home() {
             {/* Swap Terminal Column */}
             <div className="space-y-8">
               <BalanceDisplay address={address} />
-              <SwapForm onPlaceOrder={placeOrder} status={status} error={error} />
+              <SwapForm onPlaceOrder={placeOrder} status={status} error={error} lastTxHash={lastTxHash} />
               <OrderList address={address} sign={sign} />
             </div>
 
