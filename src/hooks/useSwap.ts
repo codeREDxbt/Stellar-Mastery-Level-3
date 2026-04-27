@@ -101,10 +101,9 @@ export function useSwap(address: string | null, sign: (xdr: string) => Promise<s
       fetchReserves();
       window.dispatchEvent(new CustomEvent('stellar:orders_updated', {
         detail: { 
-          amountA: typeof amountA !== 'undefined' ? amountA.toString() : "0", 
-          amountB: typeof amountB !== 'undefined' ? amountB.toString() : "0",
-          amount: typeof amount !== 'undefined' ? amount.toString() : "0",
-          sellToken: typeof sellToken !== 'undefined' ? sellToken : "UNKNOWN"
+          amountA: amountA.toString(), 
+          amountB: amountB.toString(),
+          type: 'POOL_DEPOSIT'
         }
       }));
     } catch (e: any) {
@@ -150,10 +149,9 @@ export function useSwap(address: string | null, sign: (xdr: string) => Promise<s
       fetchReserves();
       window.dispatchEvent(new CustomEvent('stellar:orders_updated', {
         detail: { 
-          amountA: typeof amountA !== 'undefined' ? amountA.toString() : "0", 
-          amountB: typeof amountB !== 'undefined' ? amountB.toString() : "0",
-          amount: typeof amount !== 'undefined' ? amount.toString() : "0",
-          sellToken: typeof sellToken !== 'undefined' ? sellToken : "UNKNOWN"
+          amount: amount.toString(),
+          sellToken: sellToken,
+          type: 'INSTANT_SWAP'
         }
       }));
     } catch (e: any) {
