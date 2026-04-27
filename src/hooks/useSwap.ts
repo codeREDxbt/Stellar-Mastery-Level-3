@@ -99,7 +99,14 @@ export function useSwap(address: string | null, sign: (xdr: string) => Promise<s
       setLastTxHash(sendResponse.hash);
       setStatus("SUCCESS");
       fetchReserves();
-      window.dispatchEvent(new CustomEvent('stellar:orders_updated'));
+      window.dispatchEvent(new CustomEvent('stellar:orders_updated', {
+        detail: { 
+          amountA: typeof amountA !== 'undefined' ? amountA.toString() : "0", 
+          amountB: typeof amountB !== 'undefined' ? amountB.toString() : "0",
+          amount: typeof amount !== 'undefined' ? amount.toString() : "0",
+          sellToken: typeof sellToken !== 'undefined' ? sellToken : "UNKNOWN"
+        }
+      }));
     } catch (e: any) {
       console.error(e);
       setError(e.message || "Deposit failed");
@@ -141,7 +148,14 @@ export function useSwap(address: string | null, sign: (xdr: string) => Promise<s
       setLastTxHash(sendResponse.hash);
       setStatus("SUCCESS");
       fetchReserves();
-      window.dispatchEvent(new CustomEvent('stellar:orders_updated'));
+      window.dispatchEvent(new CustomEvent('stellar:orders_updated', {
+        detail: { 
+          amountA: typeof amountA !== 'undefined' ? amountA.toString() : "0", 
+          amountB: typeof amountB !== 'undefined' ? amountB.toString() : "0",
+          amount: typeof amount !== 'undefined' ? amount.toString() : "0",
+          sellToken: typeof sellToken !== 'undefined' ? sellToken : "UNKNOWN"
+        }
+      }));
     } catch (e: any) {
       console.error(e);
       setError(e.message || "Swap failed");

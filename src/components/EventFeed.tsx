@@ -42,17 +42,28 @@ export function EventFeed({ payments, contractEvents, isLive, publicKey }: Props
                 <span className="mono-tech text-[9px] text-text-muted opacity-50">{event.timestamp}</span>
               </div>
               <div className="mono-tech text-xs text-white/90 leading-relaxed bg-white/[0.03] p-4 rounded border border-white/5 group-hover:border-primary/20 transition-all">
-                {event.type === 'ORDER PLACED' ? (
+                {event.type === 'ORDERS UPDATED' ? (
                   <div className="space-y-1">
-                    <div>COMMAND: <span className="text-primary">PLACE_ORDER</span></div>
-                    <div className="opacity-60 text-[10px]">
-                      ASSET: {event.detail.sellToken} <br />
-                      AMOUNT: {(Number(event.detail.sellAmount) / 1e7).toLocaleString()} <br />
-                      PRICE: {(Number(event.detail.buyPrice) / 1e7).toLocaleString()} {event.detail.buyToken}
-                    </div>
+                    {event.detail?.sellToken !== "UNKNOWN" ? (
+                      <>
+                        <div>COMMAND: <span className="text-primary">INSTANT_SWAP</span></div>
+                        <div className="opacity-60 text-[10px]">
+                          TOKEN: {event.detail.sellToken} <br />
+                          AMOUNT: {(Number(event.detail.amount) / 1e7).toLocaleString()}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div>COMMAND: <span className="text-aurora">POOL_DEPOSIT</span></div>
+                        <div className="opacity-60 text-[10px]">
+                          AMOUNT_A: {(Number(event.detail.amountA) / 1e7).toLocaleString()} <br />
+                          AMOUNT_B: {(Number(event.detail.amountB) / 1e7).toLocaleString()}
+                        </div>
+                      </>
+                    )}
                   </div>
                 ) : (
-                  <div>CMD: <span className="text-primary">FILL_ORDER</span> ID: {event.detail.orderId}</div>
+                  <div>CMD: <span className="text-primary">PROTOCOL_EVENT</span></div>
                 )}
               </div>
             </div>
