@@ -1,4 +1,5 @@
 import { StellarWalletsKit, Networks } from "@creit.tech/stellar-wallets-kit";
+import { SwkAppDarkTheme } from "@creit.tech/stellar-wallets-kit/types";
 import { defaultModules } from "@creit.tech/stellar-wallets-kit/modules/utils";
 import { useState, useCallback, useEffect } from "react";
 
@@ -16,6 +17,7 @@ export function useWallet() {
       StellarWalletsKit.init({
         network: Networks.TESTNET,
         modules: defaultModules(),
+        theme: SwkAppDarkTheme,
       });
       kitInitialized = true;
       console.log("Hooks: StellarWalletsKit initialized successfully.");
