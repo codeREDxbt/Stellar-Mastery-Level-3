@@ -9,7 +9,8 @@ interface BalanceDisplayProps {
 export function BalanceDisplay({ address }: BalanceDisplayProps) {
   const { xlm, usdc, loading } = useBalances(address);
 
-  if (!address) return null;
+  const displayXlm = address ? xlm : "0.00";
+  const displayUsdc = address ? usdc : "0.00";
 
   return (
     <div className="flex gap-4 mb-6">
@@ -21,7 +22,7 @@ export function BalanceDisplay({ address }: BalanceDisplayProps) {
           </div>
           <div className="flex items-baseline gap-2">
             <span className={`text-xl font-black tracking-tighter ${loading ? 'animate-pulse' : ''}`}>
-              {xlm}
+              {displayXlm}
             </span>
             <span className="text-[10px] font-bold text-white/40 uppercase mono-tech">
               XLM
@@ -38,7 +39,7 @@ export function BalanceDisplay({ address }: BalanceDisplayProps) {
           </div>
           <div className="flex items-baseline gap-2">
             <span className={`text-xl font-black tracking-tighter ${loading ? 'animate-pulse' : ''}`}>
-              {usdc}
+              {displayUsdc}
             </span>
             <span className="text-[10px] font-bold text-white/40 uppercase mono-tech">
               USDC

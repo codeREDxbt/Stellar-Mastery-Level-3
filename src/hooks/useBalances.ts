@@ -5,7 +5,12 @@ const HORIZON_URL = process.env.NEXT_PUBLIC_HORIZON_URL || "https://horizon-test
 const server = new Horizon.Server(HORIZON_URL);
 
 export function useBalances(address: string | null) {
-  const [balances, setBalances] = useState<{ xlm: string; usdc: string }>({ xlm: "0.00", usdc: "0.00" });
+  const [balances, setBalances] = useState<{ xlm: string; usdc: string; rawXlm: string; rawUsdc: string }>({ 
+    xlm: "0.00", 
+    usdc: "0.00",
+    rawXlm: "0.00",
+    rawUsdc: "0.00"
+  });
   const [loading, setLoading] = useState(false);
 
   const refresh = useCallback(async () => {
@@ -13,20 +18,22 @@ export function useBalances(address: string | null) {
     setLoading(true);
     try {
       const account = await server.loadAccount(address);
-      let xlm = "0.00";
-      let usdc = "0.00";
+      let xlmRaw = "0.00";
+      let usdcRaw = "0.00";
 
       account.balances.forEach((b: any) => {
         if (b.asset_type === "native") {
-          xlm = b.balance;
+          xlmRaw = b.balance;
         } else if (b.asset_code === "USDC") {
-          usdc = b.balance;
+          usdcRaw = b.balance;
         }
       });
 
       setBalances({ 
-        xlm: parseFloat(xlm).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), 
-        usdc: parseFloat(usdc).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
+        xlm: parseFloat(xlmRaw).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), 
+        usdc: parseFloat(usdcRaw).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        rawXlm: xlmRaw,
+        rawUsdc: usdcRaw
       });
     } catch (e) {
       console.error("Balance fetch error:", e);
@@ -37,7 +44,7 @@ export function useBalances(address: string | null) {
 
   useEffect(() => {
     if (!address) {
-      setBalances({ xlm: "0.00", usdc: "0.00" });
+      setBalances({ xlm: "0.00", usdc: "0.00", rawXlm: "0.00", rawUsdc: "0.00" });
       return;
     }
     

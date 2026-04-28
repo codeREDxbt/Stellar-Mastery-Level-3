@@ -92,3 +92,21 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-primary);
 }
+
+/* Custom Wallet Kit Modal Enhancements */
+div[class*="swk-"], section[class*="swk-"] {
+  backdrop-filter: blur(16px) saturate(180%);
+}
+
+button[class*="swk-"]:hover {
+  box-shadow: 0 0 15px rgba(0, 245, 255, 0.3);
+  border-color: rgba(0, 245, 255, 0.5) !important;
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+
+/* Ensure the modal overlay matches site's depth */
+div[class*="overlay"], div[class*="backdrop"] {
+  background-color: rgba(0, 0, 0, 0.7) !important;
+  backdrop-filter: blur(4px);
+}

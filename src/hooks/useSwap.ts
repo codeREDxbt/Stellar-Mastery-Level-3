@@ -108,7 +108,16 @@ export function useSwap(address: string | null, sign: (xdr: string) => Promise<s
       }));
     } catch (e: any) {
       console.error(e);
-      setError(e.message || "Deposit failed");
+      let msg = "Deposit failed";
+      const errorStr = e.toString();
+      
+      if (errorStr.includes("insufficient balance")) {
+        msg = "Insufficient wallet balance to deposit";
+      } else if (errorStr.includes("User denied")) {
+        msg = "Transaction signing cancelled";
+      }
+      
+      setError(msg);
       setStatus("FAILED");
     }
   }, [address, sign, fetchReserves]);
@@ -156,7 +165,18 @@ export function useSwap(address: string | null, sign: (xdr: string) => Promise<s
       }));
     } catch (e: any) {
       console.error(e);
-      setError(e.message || "Swap failed");
+      let msg = "Swap failed";
+      const errorStr = e.toString();
+      
+      if (errorStr.includes("insufficient balance") || errorStr.includes("Error(HasFailed)")) {
+        msg = "Insufficient wallet balance for this operation";
+      } else if (errorStr.includes("insufficient liquidity") || errorStr.includes("HostError")) {
+        msg = "Pool liquidity too low for this amount";
+      } else if (errorStr.includes("User denied")) {
+        msg = "Transaction signing cancelled";
+      }
+      
+      setError(msg);
       setStatus("FAILED");
     }
   }, [address, sign, fetchReserves]);

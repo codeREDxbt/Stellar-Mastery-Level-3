@@ -1,16 +1,19 @@
-"use client";
-
 import React, { useState, useEffect, useCallback } from "react";
 import { TxStatus } from "@/hooks/useSwap";
+import { toast } from "sonner";
 
 interface Props {
+  address: string | null;
   onPlaceOrder: (
     sellToken: string,
     sellAmount: bigint
   ) => Promise<void>;
+  onConnect: () => void;
   status: TxStatus;
   error: string | null;
   lastTxHash: string | null;
+  reserves: { a: string; b: string };
+  userBalances: { rawXlm: string; rawUsdc: string };
 }
 
 const ASSETS: Record<string, { code: string; issuer?: string }> = {
@@ -18,45 +21,13 @@ const ASSETS: Record<string, { code: string; issuer?: string }> = {
   XLM: { code: "XLM" },
 };
 
-export function SwapForm({ onPlaceOrder, status, error, lastTxHash }: Props) {
+export function SwapForm({ address, onPlaceOrder, onConnect, status, error, lastTxHash, reserves, userBalances }: Props) {
   const [sellAmount, setSellAmount] = useState("");
   const [buyPrice, setBuyPrice] = useState("");
   const [sellToken, setSellToken] = useState("USDC");
   const [buyToken, setBuyToken] = useState("XLM");
   const [isFetchingPrice, setIsFetchingPrice] = useState(false);
-
-  const fetchMarketPrice = useCallback(async () => {
-    if (!sellAmount || parseFloat(sellAmount) <= 0) return;
-
-    setIsFetchingPrice(true);
-    try {
-      const horizonUrl = process.env.NEXT_PUBLIC_HORIZON_URL || "https://horizon-testnet.stellar.org";
-      const sourceAsset = ASSETS[sellToken];
-      const destAsset = ASSETS[buyToken];
-
-      const params = new URLSearchParams({
-        source_asset_type: sourceAsset.code === "XLM" ? "native" : "credit_alphanum4",
-        source_asset_code: sourceAsset.code === "XLM" ? "" : sourceAsset.code,
-        source_asset_issuer: sourceAsset.issuer || "",
-        source_amount: sellAmount,
-        destination_assets: destAsset.code === "XLM" ? "native" : `${destAsset.code}:${destAsset.issuer}`,
-      });
-
-      const response = await fetch(`${horizonUrl}/paths/strict-send?${params.toString()}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data._embedded?.records?.[0]) {
-          const destinationAmount = data._embedded.records[0].destination_amount;
-          // Set the target price (total amount user gets)
-          setBuyPrice(destinationAmount);
-        }
-      }
-    } catch (e) {
-      console.warn("Failed to fetch market price:", e);
-    } finally {
-      setIsFetchingPrice(false);
-    }
-  }, [sellAmount, sellToken, buyToken]);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   // Handle Opposite Tokens
   const handleSellTokenChange = (token: string) => {
@@ -69,25 +40,95 @@ export function SwapForm({ onPlaceOrder, status, error, lastTxHash }: Props) {
     setSellToken(token === "USDC" ? "XLM" : "USDC");
   };
 
-  // Auto-fetch price when inputs change
+  // Price Calculation based on Pool Reserves
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchMarketPrice();
-    }, 600); // Debounce
-    return () => clearTimeout(timer);
-  }, [sellAmount, sellToken, buyToken, fetchMarketPrice]);
+    if (!sellAmount || isNaN(parseFloat(sellAmount)) || parseFloat(sellAmount) <= 0) {
+      setBuyPrice("");
+      return;
+    }
+
+    const amount = parseFloat(sellAmount);
+    const resA = parseFloat(reserves.a); // USDC
+    const resB = parseFloat(reserves.b); // XLM
+
+    if (resA === 0 || resB === 0) {
+      setBuyPrice("0.00");
+      return;
+    }
+
+    const currentReserve = sellToken === "USDC" ? resA : resB;
+    if (amount > currentReserve * 0.1) {
+      toast.warning("High Slippage Warning", {
+        description: "Swap size exceeds 10% of pool reserves. Price impact will be significant.",
+        id: "slippage-warning"
+      });
+    }
+
+    if (sellToken === "USDC") {
+      // Selling USDC for XLM
+      // Constant Product: (resA * resB) / (resA + amount) = newResB
+      // buyAmount = resB - newResB
+      const buyAmt = resB - (resA * resB) / (resA + amount);
+      setBuyPrice(buyAmt.toFixed(7));
+    } else {
+      // Selling XLM for USDC
+      const buyAmt = resA - (resA * resB) / (resB + amount);
+      setBuyPrice(buyAmt.toFixed(7));
+    }
+  }, [sellAmount, sellToken, reserves]);
+
+  // Handle transaction success/error with toasts
+  useEffect(() => {
+    if (status === "SUCCESS") {
+      toast.success("Swap Successful", {
+        description: "Your tokens have been successfully exchanged.",
+      });
+    } else if (status === "FAILED" && error) {
+      toast.error("Swap Failed", {
+        description: error,
+      });
+    }
+  }, [status, error]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setLocalError(null);
+
     if (!sellAmount) return;
-    const amount = BigInt(Math.floor(parseFloat(sellAmount) * 1e7));
+    const amountNum = parseFloat(sellAmount);
+    
+    // Check User Balance
+    const userBalance = sellToken === "USDC" ? parseFloat(userBalances.rawUsdc) : parseFloat(userBalances.rawXlm);
+    if (amountNum > userBalance) {
+      const msg = "Insufficient wallet balance for this swap";
+      setLocalError(msg);
+      toast.error("Validation Error", { description: msg });
+      return;
+    }
+
+    // Check Pool Reserves (Warning/Error)
+    const reserveIn = sellToken === "USDC" ? parseFloat(reserves.a) : parseFloat(reserves.b);
+    if (amountNum > reserveIn * 0.9) {
+      const msg = "Amount exceeds 90% of pool reserves. Trade restricted.";
+      setLocalError(msg);
+      toast.error("Safety Block", { description: msg });
+      return;
+    }
+
+    const amount = BigInt(Math.floor(amountNum * 1e7));
     onPlaceOrder(sellToken, amount);
   };
 
   const isPending = status === "PENDING";
+  const displayError = localError || error;
+
+  const handleMax = () => {
+    const balance = sellToken === "USDC" ? userBalances.rawUsdc : userBalances.rawXlm;
+    setSellAmount(balance);
+  };
 
   return (
-    <div className="glass-panel rounded-lg flex flex-col shadow-2xl h-[600px]">
+    <div className="glass-panel rounded-lg flex flex-col shadow-2xl h-[620px]">
       <div className="px-6 py-5 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-neon" />
@@ -102,7 +143,13 @@ export function SwapForm({ onPlaceOrder, status, error, lastTxHash }: Props) {
           <div className="space-y-3">
             <div className="flex justify-between items-end px-1">
               <label className="mono-tech text-[9px] font-bold text-text-muted uppercase tracking-[0.2em]">Liquefy Asset</label>
-              <span className="mono-tech text-[9px] text-text-muted opacity-30">Available: 1,420.50</span>
+              <button 
+                type="button"
+                onClick={handleMax}
+                className="mono-tech text-[9px] text-primary/60 hover:text-primary uppercase font-bold transition-colors"
+              >
+                Use_Max: {sellToken === "USDC" ? parseFloat(userBalances.rawUsdc).toFixed(2) : parseFloat(userBalances.rawXlm).toFixed(2)}
+              </button>
             </div>
             <div className="flex items-center gap-4 bg-white/[0.03] p-6 rounded border border-white/5 focus-within:border-primary/30 transition-all">
               <input
@@ -163,12 +210,12 @@ export function SwapForm({ onPlaceOrder, status, error, lastTxHash }: Props) {
 
         <div className="space-y-6 mt-auto">
           <div className="min-h-[30px]">
-            {error && (
+            {displayError && (
               <div className="text-[10px] mono-tech font-bold text-danger uppercase tracking-tight animate-in fade-in">
-                &gt; ERROR: {error}
+                &gt; ERROR: {displayError}
               </div>
             )}
-            {status === "SUCCESS" && !error && (
+            {status === "SUCCESS" && !displayError && (
               <div className="space-y-2 animate-in fade-in">
                 <div className="text-[10px] mono-tech font-bold text-primary uppercase tracking-tight">
                   &gt; BROADCAST_SUCCESS: LEDGER_CONFIRMED
@@ -188,15 +235,16 @@ export function SwapForm({ onPlaceOrder, status, error, lastTxHash }: Props) {
           </div>
 
           <button
-            type="submit"
-            disabled={isPending || !sellAmount || !buyPrice}
+            type={address ? "submit" : "button"}
+            onClick={address ? undefined : (e) => { e.preventDefault(); onConnect(); }}
+            disabled={isPending || (!!address && (!sellAmount || !buyPrice))}
             className={`w-full py-5 rounded font-black text-[10px] uppercase tracking-[0.5em] transition-all relative overflow-hidden ${
               isPending 
                 ? "bg-white/5 text-text-muted cursor-not-allowed" 
                 : "bg-white text-black hover:bg-primary hover:shadow-neon active:scale-[0.98]"
             }`}
           >
-            {isPending ? "Balancing_Pool..." : "Instant_Swap"}
+            {isPending ? "Balancing_Pool..." : address ? "Instant_Swap" : "Connect_to_Swap"}
           </button>
 
           <div className="grid grid-cols-2 gap-4">
@@ -206,7 +254,18 @@ export function SwapForm({ onPlaceOrder, status, error, lastTxHash }: Props) {
             </div>
             <div className="bg-white/[0.02] p-4 rounded border border-white/5">
               <span className="text-[7px] text-text-muted uppercase font-black tracking-widest block mb-1">Impact</span>
-              <span className="mono-tech text-[10px] text-primary">&lt; 0.01%</span>
+              <span className="mono-tech text-[10px] text-primary">
+                {sellAmount && buyPrice && parseFloat(sellAmount) > 0 ? (
+                  (() => {
+                    const resIn = sellToken === "USDC" ? parseFloat(reserves.a) : parseFloat(reserves.b);
+                    const resOut = sellToken === "USDC" ? parseFloat(reserves.b) : parseFloat(reserves.a);
+                    const spotPrice = resOut / resIn;
+                    const effectivePrice = parseFloat(buyPrice) / parseFloat(sellAmount);
+                    const impact = Math.max(0, (1 - (effectivePrice / spotPrice)) * 100);
+                    return impact < 0.01 ? "< 0.01%" : `${impact.toFixed(2)}%`;
+                  })()
+                ) : "0.00%"}
+              </span>
             </div>
           </div>
         </div>

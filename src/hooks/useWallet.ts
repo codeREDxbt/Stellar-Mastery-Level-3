@@ -2,6 +2,7 @@ import { StellarWalletsKit, Networks } from "@creit.tech/stellar-wallets-kit";
 import { SwkAppDarkTheme } from "@creit.tech/stellar-wallets-kit/types";
 import { defaultModules } from "@creit.tech/stellar-wallets-kit/modules/utils";
 import { useState, useCallback, useEffect } from "react";
+import { WalletConnectModule } from "@creit.tech/stellar-wallets-kit/modules/wallet-connect";
 
 let kitInitialized = false;
 
@@ -16,8 +17,30 @@ export function useWallet() {
     try {
       StellarWalletsKit.init({
         network: Networks.TESTNET,
-        modules: defaultModules(),
-        theme: SwkAppDarkTheme,
+        modules: [
+          ...defaultModules(),
+          new WalletConnectModule({
+            projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "6251ee91a97d4c88599426f43e5e40e6",
+            metadata: {
+              name: "Stellar Swap",
+              description: "Stellar Swap Terminal",
+              url: window.location.origin,
+              icons: ["https://stellar-swap-app.vercel.app/logo.png"],
+            },
+          }),
+        ],
+        theme: {
+          ...SwkAppDarkTheme,
+          "background": "#000000",
+          "background-secondary": "#0a0a0a",
+          "primary": "#00f5ff",
+          "foreground": "#ffffff",
+          "foreground-secondary": "rgba(255, 255, 255, 0.5)",
+          "border": "rgba(0, 245, 255, 0.2)",
+          "border-radius": "4px",
+          "font-family": "'JetBrains Mono', 'Inter', system-ui",
+          "shadow": "0 0 30px rgba(0, 245, 255, 0.15), 0 0 100px rgba(0, 0, 0, 0.9)",
+        },
       });
       kitInitialized = true;
       console.log("Hooks: StellarWalletsKit initialized successfully.");

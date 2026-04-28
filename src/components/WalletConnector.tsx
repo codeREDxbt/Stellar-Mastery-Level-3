@@ -28,7 +28,7 @@ export function WalletConnector({ address, onConnect, onDisconnect }: Props) {
       <div className="hidden sm:flex flex-col items-end gap-0.5">
         <div className="flex items-center gap-2">
           <span className="mono-tech text-[8px] font-black text-aurora tracking-widest uppercase">Network_Live</span>
-          <div className="w-1.5 h-1.5 rounded-full bg-aurora shadow-neon animate-pulse" />
+          <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-neon animate-pulse" />
         </div>
         <div className="px-2 py-0.5 rounded bg-white/5 border border-white/5">
            <span className="mono-tech text-[9px] text-white/40 font-bold tracking-tighter">
