@@ -12,6 +12,19 @@ StellarPulse is a production-grade Stellar Testnet payment and swap mini-dApp. I
 
 ---
 
+## 📸 Visual Walkthrough
+
+### Swap Terminal
+![Swap Terminal](./Screenshots/Swap-terminal.png)
+
+### Send Payment
+![Send Payment](./Screenshots/Send_Pay.png)
+
+### Transaction History
+![Transaction History](./Screenshots/Tx_history.png)
+
+---
+
 ## ✨ Features & Architecture
 
 ### 🛡️ StellarCache Engine
