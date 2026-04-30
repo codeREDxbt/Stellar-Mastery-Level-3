@@ -60,6 +60,12 @@ StellarPulse is configured for the **Stellar Testnet** out of the box.
   - **Verified USDC**: `GBBD47IF...FLA5` (Testnet Issuer)
 - **Liquidity Pool**: Constant-product (x*y=k) for the XLM/USDC pair.
 
+### 📜 Smart Contract Registry
+- **Liquidity Pool ID**: `CDFHB7JO...GG2P`
+- **USDC Contract**: `CBIELTK6...DAMA`
+- **XLM Contract**: `CDLZFC3S...CYSC`
+- **RPC Endpoint**: `https://soroban-testnet.stellar.org`
+
 ---
 
 ## 🧪 Quality Assurance
