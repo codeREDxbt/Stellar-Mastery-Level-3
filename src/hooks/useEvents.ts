@@ -9,27 +9,37 @@ export function useEvents(publicKey: string | null) {
   const [contractEvents, setContractEvents] = useState<any[]>([]);
   const [isLive, setIsLive] = useState(false);
 
-  // Horizon SSE — live payments stream
+  // Horizon SSE — live payments stream with reconnection logic
   useEffect(() => {
-    if (!publicKey) {
-      setIsLive(false);
-      return;
+    let closeStream: (() => void) | null = null;
+    let retryTimeout: NodeJS.Timeout | null = null;
+
+    function startStream() {
+      if (!publicKey) return;
+
+      setIsLive(true);
+      closeStream = horizon
+        .payments()
+        .forAccount(publicKey)
+        .cursor("now")
+        .stream({
+          onmessage: (payment: any) => {
+            setPayments((p) => [payment, ...p].slice(0, 50));
+          },
+          onerror: (err: any) => {
+            // Horizon streams close frequently in dev or on network resets.
+            // We just log it quietly and try to reconnect in 5 seconds.
+            setIsLive(false);
+            if (retryTimeout) clearTimeout(retryTimeout);
+            retryTimeout = setTimeout(() => {
+              console.log("Hooks: Reconnecting to Horizon stream...");
+              startStream();
+            }, 5000);
+          },
+        });
     }
 
-    setIsLive(true);
-    const stream = horizon
-      .payments()
-      .forAccount(publicKey)
-      .cursor("now")
-      .stream({
-        onmessage: (payment: any) => {
-          setPayments((p) => [payment, ...p].slice(0, 50));
-        },
-        onerror: (err: any) => {
-          console.error("Horizon stream error:", err);
-          setIsLive(false);
-        },
-      });
+    startStream();
 
     // Listen for local simulated contract events
     const handleLocalOrder = (e: any) => {
@@ -46,8 +56,8 @@ export function useEvents(publicKey: string | null) {
     window.addEventListener('stellar:orders_updated' as any, handleLocalOrder);
     
     return () => {
-      // @ts-ignore
-      if (typeof stream === 'function') stream();
+      if (closeStream) closeStream();
+      if (retryTimeout) clearTimeout(retryTimeout);
       window.removeEventListener('stellar:order_placed' as any, handleLocalOrder);
       window.removeEventListener('stellar:orders_updated' as any, handleLocalOrder);
     };
