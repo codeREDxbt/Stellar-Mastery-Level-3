@@ -6,8 +6,8 @@ StellarPulse is a production-grade Stellar Testnet payment and swap mini-dApp. I
 
 ## 🔗 Submission Deliverables
 
-- **Live Demo**: [🚀 View Live App](YOUR_VERCEL_URL_HERE)
-- **Demo Video**: [🎬 1-Minute Walkthrough](YOUR_VIDEO_URL_HERE)
+- **Live Demo**: [🚀 View Live App](https://stellarpulse-xi.vercel.app)
+- **Demo Video**: [🎬 1-Minute Walkthrough](https://drive.google.com/file/d/1I9TLx6t6Y-EMJUjOH8d1i0h7Dva43YCL/view?usp=sharing)
 - **GitHub Repository**: [📂 Source Code](https://github.com/codeREDxbt/Stellar-Mastery-Level-3)
 
 ---
