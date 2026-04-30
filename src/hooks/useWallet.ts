@@ -28,9 +28,9 @@ export function useWallet() {
               projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
               metadata: {
                 name: "Stellar Pulse",
-                description: "Stellar Pulse Terminal",
-                url: window.location.origin,
-                icons: ["https://stellar-pulse.vercel.app/logo.png"],
+                description: "Premium Stellar Swap Terminal",
+                url: typeof window !== "undefined" ? window.location.origin : "https://stellar-pulse.app",
+                icons: ["https://stellar-pulse.app/favicon.ico"],
               },
             })
           ] : []),
