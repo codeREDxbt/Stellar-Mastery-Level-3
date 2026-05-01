@@ -90,8 +90,8 @@ Tests       23 passed
 
 1. **Clone & Install**:
    ```bash
-   git clone https://github.com/codeREDxbt/Stellar-Mastery-Level-3.git
-   cd Stellar-Mastery-Level-3
+   git clone https://github.com/codeREDxbt/Stellar-Pulse.git
+   cd Stellar-Pulse
    npm install
    ```
 
